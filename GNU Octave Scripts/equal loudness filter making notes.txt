@@ -1,0 +1,36 @@
+pkg load signal
+el_iso226_40phon = fir2(44100,[0.0,20/22050,25/22050,32/22050,40/22050,50/22050,63/22050,80/22050,100/22050,125/22050,160/22050,200/22050,250/22050,315/22050,400/22050,500/22050,630/22050,800/22050,1000/22050,1250/22050,1600/22050,2000/22050,2500/22050,3150/22050,4000/22050,5000/22050,6300/22050,8000/22050,10000/22050,12500/22050,16000/22050,20000/22050,1.0],db2pow([-60.0,-59.9,-53.9,-48.2,-42.6,-37.8,-33.1,-28.5,-24.4,-20.6,-16.7,-13.4,-10.4,-7.6,-5.0,-3.1,-1.3,-0.1,0.0,-1.8,-2.5,0.8,3.5,4.4,3.4,0.0,-5.8,-11.8,-14.3,-11.5,-12.0,-52.8,-60.0]));
+[frequencyResponse, frequencyVector] = freqz(el_iso226_40phon, 1, 44101);
+frequencyResponse = transpose(frequencyResponse);
+magnitudeResponse = abs(frequencyResponse);
+phaseResponse = angle(frequencyResponse);
+frequencyVector = transpose(frequencyVector);
+frequencyVector = frequencyVector ./ pi;
+frequencyVector(1,length(frequencyVector)) = 1.0;
+magnitudeResponseInDb = pow2db(magnitudeResponse);
+negativeMagnitudeResponseInDb = -magnitudeResponseInDb;
+%Make sure that this graph doesn't look stupid.
+%plot(1:44101,negativeMagnitudeResponseInDb);
+%I want it to be 0.0 at 0 and 1.8 at 2,500.
+%negativeMagnitudeResponseInDb(1,1:2500) = 0:1.8/2499:1.8;
+%I want it to be 12.0 at 32,000 and 0.0 at 44,101.
+%linearResponse = 0:12.0/12100:12.0;
+%linearResponseReversed = sort(linearResponse,"descend");
+%negativeMagnitudeResponseInDb(1,32001:44101) = linearResponseReversed;
+negativeMagnitudeResponse = db2pow(negativeMagnitudeResponseInDb);
+smallEl_iso226_40phon = fir2(16384,frequencyVector,negativeMagnitudeResponse);
+smallEl_iso226_40phonAsSingles = single(smallEl_iso226_40phon);
+save("-ascii","C:\\Users\\dusti\\Desktop\\el_iso226_40phon.txt","smallEl_iso226_40phonAsSingles");
+
+%-------------------------------
+
+el_iso226_40phon_opposite = fir2(44100,[0.0,20/22050,25/22050,32/22050,40/22050,50/22050,63/22050,80/22050,100/22050,125/22050,160/22050,200/22050,250/22050,315/22050,400/22050,500/22050,630/22050,800/22050,1000/22050,1250/22050,1600/22050,2000/22050,2500/22050,3150/22050,4000/22050,5000/22050,6300/22050,8000/22050,10000/22050,12500/22050,16000/22050,20000/22050,1.0],db2pow([-10.65,-10.50365303,-10.65340328,-10.803982,-10.9528694,-11.08758958,-11.22332969,-11.3622955,-11.49297858,-11.62146079,-11.76614718,-11.91084147,-13.15433711,-14.6025993,-15.76798173,-16.57408296,-17.26143225,-17.76002281,-17.77997534,-17.07094386,-16.79483813,-18.07903326,-19.09472106,-19.42263418,-19.04331825,-17.78086435,-15.39779271,-12.22141095,-11.86875736,-12.46527016,-12.06306492,-10.68358632,-12]));
+[frequencyResponse, frequencyVector] = freqz(el_iso226_40phon_opposite, 1, 44101);
+frequencyResponse = transpose(frequencyResponse);
+magnitudeResponse = abs(frequencyResponse);
+frequencyVector = transpose(frequencyVector);
+frequencyVector = frequencyVector ./ pi;
+frequencyVector(1,length(frequencyVector)) = 1.0;
+smallEl_iso226_40phon_opposite = fir2(16384,frequencyVector,magnitudeResponse);
+smallEl_iso226_40phon_oppositeAsSingles = single(smallEl_iso226_40phon_opposite);
+save("-ascii","C:\\Users\\dusti\\Desktop\\el_iso226_40phon_opposite.txt","smallEl_iso226_40phon_oppositeAsSingles");
