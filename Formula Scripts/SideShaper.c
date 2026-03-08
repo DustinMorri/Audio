@@ -4,6 +4,24 @@ Description:
 	This script allows the user to change the audio side profile in ways that can make certain instruments and sounds really pop out of the mix.
 	I got the idea for this by tinkering around with FL Studio's Patcher plug-in after reading about some plugins in an audio engineering magazine.
 	I also wasn't quite satisfied with Izotope's Imager plug-in.
+Parameters:
+	SWITCH_1 - Relative Positioning
+		By default, with this switch turned off, the script only affects samples that come in with a digital value between -End Distance to -Start Distance and Start Distance to End Distance.
+		Switching this on will make the script affect samples between -Start Distance - Radius to -Start Distance + Radius and Start Distance - Radius to Start Distance + Radius.
+	SWITCH_2 - Mid Mode
+		By default, with this switch turned off, the script only affect the side profile.
+		Switching this on will make the script only affect the mid profile.
+	SWITCH_3 - Both Mode
+		Switching this on will override SWITCH_2 to make the script affect both the mid and side profiles.
+	KNOB_1 - Start Distance
+		The beginning of the range of sample values that will be chosen to be compressed or saturated.
+	KNOB_2 - End Distance / Radius
+		The end of the range of sample values that will be chosen to be compressed or saturated.
+	KNOB_3 - Zone 1 Percentage
+	KNOB_4 - Inflection Compression
+	KNOB_5 - Zone 1 Compression
+	KNOB_6 - Zone 2 Compression
+	KNOB_7 - Distance Resolution
 */
 
 //If you want to see what this function does, paste this LaTeX formula into the Desmos online graphing calculator.
@@ -71,21 +89,32 @@ formula_main_stereo {
 		}
 	}
 	float diameter = endDistance - startDistance;
-	float inflectionPointCompression = KNOB_3;
-	float inflectionPointX = startDistance + diameter * inflectionPointCompression;
-	float inflectionPointY = startDistance + diameter * (1.0 - inflectionPointCompression);
+	radius = diameter / 2.0;
+	float zone1percentage = KNOB_3;
+	float inflectionPointCompression = KNOB_4;
+	
+	float z1pOffset = zone1percentage * diameter;
+	float ipcDirection = inflectionPointCompression - 0.5;
+	float ipcDiameter = fabs(zone1percentage - (float)0.5) * 2.0;
+	ipcDiameter = 1.0 - ipcDiameter;
+	ipcDiameter *= diameter;
+	float ipcOffset = ipcDirection * ipcDiameter;
+	
+	float inflectionPointX = startDistance + z1pOffset + ipcOffset;
+	float inflectionPointY = startDistance + z1pOffset - ipcOffset;
+	
 	float zone1xLength = inflectionPointX - startDistance;
 	float zone1yLength = inflectionPointY - startDistance;
 	float zone2xLength = endDistance - inflectionPointX;
 	float zone2yLength = endDistance - inflectionPointY;
-	float zone1compression = KNOB_4;
+	float zone1compression = KNOB_5;
 	int zone1compress = 0;
 	float zone1tension = (0.5 - zone1compression) * 2.0;
 	if(zone1compression > 0.5){
 		zone1compress = 1;
 		zone1tension = (zone1compression - 0.5) * 2.0;
 	}
-	float zone2compression = KNOB_5;
+	float zone2compression = KNOB_6;
 	int zone2compress = 0;
 	float zone2tension = (0.5 - zone2compression) * 2.0;
 	if(zone2compression > 0.5){
