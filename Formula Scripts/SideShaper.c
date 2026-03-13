@@ -59,6 +59,9 @@ float denormalize(float in,float startDistance,float length){
 	return startDistance + in * length;
 }
 
+float startDistanceLastTimeResolutionWasChanged = 0.0;
+float endDistanceLastTimeResolutionWasChanged = 0.0;
+
 formula_main_stereo {
 	//Split the mid and side signals.
     float mid = (input.left + input.right) / 2.0;
@@ -66,6 +69,7 @@ formula_main_stereo {
 	
 	//Get the user input.
 	int relativePositioning = SWITCH_1;
+	float resolution = KNOB_7;
 	float startDistance;
 	float endDistance;
 	float inflectionPointDistance;
@@ -73,9 +77,16 @@ formula_main_stereo {
 	if(relativePositioning == 0){
 		startDistance = KNOB_1;
 		endDistance = KNOB_2;
+		if(resolution < 1.0){
+			endDistance = startDistance + KNOB_2 * resolution;
+			if(endDistance > 1.0) endDistance = 1.0;
+		}
 	}else{
 		inflectionPointDistance = KNOB_1;
 		radius = KNOB_2 / 2.0;
+		if(resolution < 1.0){
+			radius = KNOB_2 / (2.0 / resolution);
+		}
 		startDistance = inflectionPointDistance - radius;
 		endDistance = inflectionPointDistance + radius;
 		if(startDistance < 0.0){
@@ -122,39 +133,77 @@ formula_main_stereo {
 		zone2tension = (zone2compression - 0.5) * 2.0;
 	}
 	
-	//Determine the output value.
-	float sideSign = 0.0;
-	if(side > 0.0){
-		sideSign = 1.0;
-	}else if(side < 0.0){
-		sideSign = -1.0;
-	}
-	float absSide = fabs(side);
-	if(absSide > startDistance && absSide < endDistance){
-		float outSide = absSide;
-		//If we're in zone 1,
-		if(absSide < inflectionPointX){
-			if(zone1compress == 1){
-				outSide = denormalize(curveCompress(normalize(absSide,startDistance,zone1xLength),zone1tension),startDistance,zone1yLength);
-			}else{
-				float no = normalize(absSide,startDistance,zone1xLength);
-				no = 1.0 - no;
-				float cc = curveCompress(no,zone1tension);
-				cc = 1.0 - cc;
-				outSide = denormalize(cc,startDistance,zone1yLength);
-			}
-		}else if(absSide > inflectionPointX){
-			if(zone2compress == 1){
-				outSide = denormalize(curveCompress(normalize(absSide,inflectionPointX,zone2xLength),zone2tension),inflectionPointY,zone2yLength);
-			}else{
-				float no = normalize(absSide,inflectionPointX,zone2xLength);
-				no = 1.0 - no;//formula tries to compile away too much...
-				float cc = curveCompress(no,zone2tension);
-				cc = 1.0 - cc;
-				outSide = denormalize(cc,inflectionPointY,zone2yLength);
-			}
+	//If mid mode is not active or both mode is active,
+	if(SWITCH_2 == 0 || SWITCH_3 == 1){
+		float sideSign = 0.0;
+		if(side > 0.0){
+			sideSign = 1.0;
+		}else if(side < 0.0){
+			sideSign = -1.0;
 		}
-		side = sideSign * outSide;
+		float absSide = fabs(side);
+		if(absSide > startDistance && absSide < endDistance){
+			float outSide = absSide;
+			//If we're in zone 1,
+			if(absSide < inflectionPointX){
+				if(zone1compress == 1){
+					outSide = denormalize(curveCompress(normalize(absSide,startDistance,zone1xLength),zone1tension),startDistance,zone1yLength);
+				}else{
+					float no = normalize(absSide,startDistance,zone1xLength);
+					no = 1.0 - no;
+					float cc = curveCompress(no,zone1tension);
+					cc = 1.0 - cc;
+					outSide = denormalize(cc,startDistance,zone1yLength);
+				}
+			}else if(absSide > inflectionPointX){
+				if(zone2compress == 1){
+					outSide = denormalize(curveCompress(normalize(absSide,inflectionPointX,zone2xLength),zone2tension),inflectionPointY,zone2yLength);
+				}else{
+					float no = normalize(absSide,inflectionPointX,zone2xLength);
+					no = 1.0 - no;//formula tries to compile away too much...
+					float cc = curveCompress(no,zone2tension);
+					cc = 1.0 - cc;
+					outSide = denormalize(cc,inflectionPointY,zone2yLength);
+				}
+			}
+			side = sideSign * outSide;
+		}
+	}
+	//If mid mode is active or both mode is active,
+	if(SWITCH_2 == 1 || SWITCH_3 == 1){
+		float midSign = 0.0;
+		if(mid > 0.0){
+			midSign = 1.0;
+		}else if(mid < 0.0){
+			midSign = -1.0;
+		}
+		float absMid = fabs(mid);
+		if(absMid > startDistance && absMid < endDistance){
+			float outMid = absMid;
+			//If we're in zone 1,
+			if(absMid < inflectionPointX){
+				if(zone1compress == 1){
+					outMid = denormalize(curveCompress(normalize(absMid,startDistance,zone1xLength),zone1tension),startDistance,zone1yLength);
+				}else{
+					float no = normalize(absMid,startDistance,zone1xLength);
+					no = 1.0 - no;
+					float cc = curveCompress(no,zone1tension);
+					cc = 1.0 - cc;
+					outMid = denormalize(cc,startDistance,zone1yLength);
+				}
+			}else if(absMid > inflectionPointX){
+				if(zone2compress == 1){
+					outMid = denormalize(curveCompress(normalize(absMid,inflectionPointX,zone2xLength),zone2tension),inflectionPointY,zone2yLength);
+				}else{
+					float no = normalize(absMid,inflectionPointX,zone2xLength);
+					no = 1.0 - no;//formula tries to compile away too much...
+					float cc = curveCompress(no,zone2tension);
+					cc = 1.0 - cc;
+					outMid = denormalize(cc,inflectionPointY,zone2yLength);
+				}
+			}
+			mid = midSign * outMid;
+		}
 	}
 	
     //Protect the signal from the user's assertion of the usual maximum stereo amplitude.
