@@ -1,5 +1,10 @@
 # Dustin's Audio Code
-This repository contains some scripts that I use for making and listening to music.
+This repository contains some scripts that I use for making and listening to music.  
+
+## Side Shaper Plugin
+If you are looking for the Side Shaper plugin, go one folder deeper into the SideShaper submodule.  
+It has its own readme.
+
 ## Formula Scripts
 This folder contains C source code that can be loaded into SoundSpear's [Formula VST](https://soundspear.com/product/formula) plug-in.
 ### SideShaper.c
